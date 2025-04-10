@@ -1,0 +1,7 @@
+@app.get("/calculate/")
+def calculate(operation: str, a: float, b: float):
+    if operation == "%2B":
+        return {"result": a + b}
+    elif operation == "-":
+        return {"result": a - b}
+    return {"error": "Invalid operation"}
