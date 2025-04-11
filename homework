@@ -1,7 +1,10 @@
 @app.get("/calculate/")
-def calculate(operation: str, a: float, b: float):
-    if operation == "%2B":
-        return {"result": a + b}
-    elif operation == "-":
-        return {"result": a - b}
-    return {"error": "Invalid operation"}
+def calculator_mini(op: str, x: float, y: float):
+    if op == "+":
+        result = x + y
+    elif op == "-":
+        result = x - y
+    else:
+        return {"error": "я не знаю як зробити через 2%B видає завжди помилку"}
+
+    return {"result": result}
