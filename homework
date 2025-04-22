@@ -1,10 +1,20 @@
-@app.get("/calculate/")
-def calculator_mini(op: str, x: float, y: float):
-    if op == "+":
-        result = x + y
-    elif op == "-":
-        result = x - y
-    else:
-        return {"error": "я не знаю як зробити через 2%B видає завжди помилку"}
 
-    return {"result": result}
+names = []
+
+@app.post("/add/{name}")
+def add_name(name: str):
+    if name in names:
+        raise HTTPException(status_code=400, detail="Ім'я вже існує")
+    names.append(name)
+    return {"message": f"Ім'я '{name}' додано"}
+
+@app.get("/names")
+def get_names():
+    return {"names": names}
+
+@app.delete("/delete/{name}")
+def delete_name(name: str):
+    if name not in names:
+        raise HTTPException(status_code=404, detail="Ім'я не знайдено")
+    names.remove(name)
+    return {"message": f"Ім'я '{name}' видалено"}
