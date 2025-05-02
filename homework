@@ -1,3 +1,8 @@
+import asyncio
+import aiohttp
+import aiomysql
+from pymysql.err import IntegrityError
+
 async def fetch_users():
     async with aiohttp.ClientSession() as session:
         async with session.get("https://jsonplaceholder.typicode.com/users") as resp:
@@ -11,31 +16,52 @@ async def db_connection():
 
 async def get_users():
     conn = await db_connection()
-    async with conn.cursor(aiomysql.DictCursor) as cur:
-        await cur.execute("SELECT * FROM users")
-        users = await cur.fetchall()
-    await conn.ensure_closed()
-    return users
+    try:
+        async with conn.cursor(aiomysql.DictCursor) as cur:
+            await cur.execute("SELECT * FROM users")
+            return await cur.fetchall()
+    except Exception as e:
+        print(f"Помилка при отриманні користувачів: {e}")
+        return []
+    finally:
+        conn.close()
 
 async def add_user(name, email):
     conn = await db_connection()
-    async with conn.cursor() as cur:
-        await cur.execute("INSERT INTO users (name, email) VALUES (%s, %s)", (name, email))
-    await conn.ensure_closed()
+    try:
+        async with conn.cursor() as cur:
+            await cur.execute("INSERT INTO users (name, email) VALUES (%s, %s)", (name, email))
+    except IntegrityError as e:
+        print(f"Користувач з email '{email}' вже існує: {e}")
+    except Exception as e:
+        print(f"Помилка при додаванні користувача: {e}")
+    finally:
+        conn.close()
 
 async def delete_user(user_id):
     conn = await db_connection()
-    async with conn.cursor() as cur:
-        await cur.execute("DELETE FROM users WHERE id=%s", (user_id,))
-    await conn.ensure_closed()
+    try:
+        async with conn.cursor() as cur:
+            await cur.execute("DELETE FROM users WHERE id=%s", (user_id,))
+            if cur.rowcount == 0:
+                print(f"Користувача з id={user_id} не знайдено.")
+    except Exception as e:
+        print(f"Помилка при видаленні користувача: {e}")
+    finally:
+        conn.close()
 
 async def main():
     users = await fetch_users()
     await add_user(users[0]['name'], users[0]['email'])
+
     print(await get_users())
-    if (db_users := await get_users()):
+
+    db_users = await get_users()
+    if db_users:
         await delete_user(db_users[0]['id'])
+
     print(await get_users())
 
 if __name__ == "__main__":
     asyncio.run(main())
+
