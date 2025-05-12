@@ -1,14 +1,13 @@
-
 from fastapi import FastAPI, HTTPException
 from models import Task, TaskUpdate
+from typing import Dict
 
 app = FastAPI()
 
-
-tasks = {}
+tasks: Dict[int, Task] = {}
 task_id_counter = 1
 
-@app.post("/tasks", response_model=dict)
+@app.post("/tasks")
 def create_task(task: Task):
     global task_id_counter
     task_id = task_id_counter
@@ -16,9 +15,9 @@ def create_task(task: Task):
     task_id_counter += 1
     return {"id": task_id, "task": task}
 
-@app.get("/tasks", response_model=dict)
-def get_all_tasks():
-    return {task_id: task for task_id, task in tasks.items()}
+@app.get("/tasks")
+def get_all_tasks() -> Dict[int, Task]:
+    return dict(tasks)
 
 @app.get("/tasks/{task_id}", response_model=Task)
 def get_task(task_id: int):
@@ -30,10 +29,8 @@ def get_task(task_id: int):
 def update_task(task_id: int, task_update: TaskUpdate):
     if task_id not in tasks:
         raise HTTPException(status_code=404, detail="Task not found")
-
     stored_task = tasks[task_id]
     update_data = task_update.dict(exclude_unset=True)
-
     updated_task = stored_task.copy(update=update_data)
     tasks[task_id] = updated_task
     return updated_task
@@ -44,5 +41,6 @@ def delete_task(task_id: int):
         raise HTTPException(status_code=404, detail="Task not found")
     del tasks[task_id]
     return {"message": "Task deleted"}
+
 
 
